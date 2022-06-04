@@ -11,10 +11,19 @@ pub enum Case{
     EMPTY
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Player {
     RED,
     YELLOW
+}
+
+impl Player {
+    pub fn opponent(self) -> Player {
+        match self {
+            Player::RED => Player::YELLOW,
+            Player::YELLOW => Player::RED,
+        }
+    }
 }
 
 impl Display for Player {
@@ -122,6 +131,9 @@ impl Grid{
     }
     pub fn is_column_full(&self, column: usize) -> bool{
         self.get_column(column).current_case > self.get_size().rows
+    }
+    pub fn is_full(&self) -> bool {
+        self.grid.iter().all(|column| column.current_case > self.get_size().rows)
     }
     pub fn play(&self, column: usize, choix: Player) -> Result<Grid, &'static str>{
         if self.is_column_full(column){

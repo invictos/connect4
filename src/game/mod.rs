@@ -1,22 +1,45 @@
 mod grid;
+mod ai;
 
 use std::io;
 
 pub use grid::*;
+pub use ai::*;
+
+//const GAMEMODE: GameMode = GameMode::HumanVsHuman;
+const GAMEMODE: GameMode = GameMode::HumanVsAI;
 
 pub struct Game {
     grid: Grid,
+    gamemode: GameMode,
     current_player: Player,
+    ai: Option<AI>
 }
 
+enum GameMode {
+    HumanVsHuman,
+    HumanVsAI,
+}
 
 impl Game {
     pub fn new() -> Game {
+        let ai = match GAMEMODE {
+            GameMode::HumanVsHuman => None,
+            GameMode::HumanVsAI => Some(AI::new(100))
+        };
+
         Game {
             grid: Grid::new_default(),
             current_player: Player::RED,
+            gamemode: GAMEMODE,
+            ai
         }
     }
+
+    fn get_ai(&self) -> &AI {
+        self.ai.as_ref().unwrap()
+    }
+
     fn input_column_number(&self) -> usize {
         loop {
             println!("Please enter a column number:");
@@ -34,7 +57,14 @@ impl Game {
             println!("{}", self.grid);
             print!("{}'s turn, ", self.current_player);
             loop {
-                let column = self.input_column_number();
+                let column = match self.current_player {
+                    Player::RED => self.input_column_number(),
+                    Player::YELLOW => match self.gamemode {
+                        GameMode::HumanVsHuman => self.input_column_number(),
+                        GameMode::HumanVsAI => self.get_ai().get_column(&self.grid, self.current_player),
+                    },
+                };
+
                 match self.grid.play(column,  self.current_player.into()) {
                     Ok(grid) => {
                         self.grid = grid;
@@ -50,10 +80,7 @@ impl Game {
                 break;
             }
 
-            self.current_player = match self.current_player {
-                Player::RED => Player::YELLOW,
-                Player::YELLOW => Player::RED,
-            };
+            self.current_player = self.current_player.opponent();
         }
     }
 }
